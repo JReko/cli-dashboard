@@ -10,13 +10,13 @@
 #   FEATURE_<COMPONENT>_<NAME>  — true|false to enable/disable a single feature.
 
 # --- Refresh -----------------------------------------------------------------
-DASHBOARD_REFRESH_MINUTES=5
+DASHBOARD_REFRESH_MINUTES=0
 
 # --- Demo --------------------------------------------------------------------
 # When true, every component renders fake data instead of hitting real APIs.
 # Used to capture the README screenshot without leaking real handles, repos,
 # or ticket info. No tokens needed.
-DASHBOARD_DEMO=false
+DASHBOARD_DEMO=true
 
 # --- Components --------------------------------------------------------------
 COMPONENT_BREW=true
