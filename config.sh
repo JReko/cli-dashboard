@@ -10,7 +10,7 @@
 #   FEATURE_<COMPONENT>_<NAME>  — true|false to enable/disable a single feature.
 
 # --- Refresh -----------------------------------------------------------------
-DASHBOARD_REFRESH_MINUTES=1
+DASHBOARD_REFRESH_MINUTES=5
 
 # --- Demo --------------------------------------------------------------------
 # When true, every component renders fake data instead of hitting real APIs.
@@ -27,6 +27,7 @@ COMPONENT_JIRA=true
 FEATURE_BREW_OUTDATED_PACKAGES=true
 FEATURE_BREW_OUTDATED_CASKS=true
 FEATURE_GITHUB_API_STATUS=true
+FEATURE_GITHUB_PRS_AUTHORED=true
 FEATURE_GITHUB_PRS_REVIEW_REQUESTED=true
 FEATURE_JIRA_ASSIGNED_ISSUES=true
 

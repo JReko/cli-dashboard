@@ -10,7 +10,7 @@ Be extremely concise. Sacrifice grammar for concision.
 
 ## Project goal
 
-A CLI dashboard that refreshes itself periodically.
+A CLI dashboard that refreshes itself periodically to show my day to day relevant information.
 
 ## Rules
 

@@ -94,6 +94,74 @@ demo_github_prs_review_requested_payload() {
     }'
 }
 
+demo_github_prs_authored_payload() {
+  jq -n \
+    --arg t1 "$(_demo_ago '30 minutes')" \
+    --arg t2 "$(_demo_ago '5 hours')" \
+    --arg t3 "$(_demo_ago '2 days')" \
+    --arg t4 "$(_demo_ago '6 days')" \
+    '{
+      data: {
+        search: {
+          nodes: [
+            {
+              number: 314,
+              title: "Add prs_authored feature to github component",
+              url: "https://github.com/octocat/hello-world/pull/314",
+              createdAt: $t1,
+              isDraft: false,
+              repository: {nameWithOwner: "octocat/hello-world"},
+              mergeable: "MERGEABLE",
+              reviewDecision: "APPROVED",
+              commits: {nodes: [{commit: {statusCheckRollup: {state: "SUCCESS"}}}]},
+              latestReviews: {nodes: [{state: "APPROVED"}, {state: "APPROVED"}]},
+              reviewRequests: {totalCount: 0}
+            },
+            {
+              number: 271,
+              title: "Wire up retry logic for flaky API calls",
+              url: "https://github.com/acme/widget/pull/271",
+              createdAt: $t2,
+              isDraft: false,
+              repository: {nameWithOwner: "acme/widget"},
+              mergeable: "MERGEABLE",
+              reviewDecision: "CHANGES_REQUESTED",
+              commits: {nodes: [{commit: {statusCheckRollup: {state: "FAILURE"}}}]},
+              latestReviews: {nodes: [{state: "CHANGES_REQUESTED"}]},
+              reviewRequests: {totalCount: 1}
+            },
+            {
+              number: 199,
+              title: "Switch demo timestamps to ISO 8601",
+              url: "https://github.com/octocat/spoon-knife/pull/199",
+              createdAt: $t3,
+              isDraft: false,
+              repository: {nameWithOwner: "octocat/spoon-knife"},
+              mergeable: "CONFLICTING",
+              reviewDecision: "REVIEW_REQUIRED",
+              commits: {nodes: [{commit: {statusCheckRollup: {state: "PENDING"}}}]},
+              latestReviews: {nodes: [{state: "APPROVED"}, {state: "COMMENTED"}]},
+              reviewRequests: {totalCount: 1}
+            },
+            {
+              number: 88,
+              title: "WIP: extract shared age helper",
+              url: "https://github.com/octocat/hello-world/pull/88",
+              createdAt: $t4,
+              isDraft: true,
+              repository: {nameWithOwner: "octocat/hello-world"},
+              mergeable: "MERGEABLE",
+              reviewDecision: null,
+              commits: {nodes: [{commit: {statusCheckRollup: {state: "NONE"}}}]},
+              latestReviews: {nodes: []},
+              reviewRequests: {totalCount: 0}
+            }
+          ]
+        }
+      }
+    }'
+}
+
 demo_jira_assigned_issues_payload() {
   jq -n \
     --arg t1 "$(_demo_ago '3 hours')" \
