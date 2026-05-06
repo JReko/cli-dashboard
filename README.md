@@ -34,11 +34,6 @@ git checkout "$(git tag --sort=-v:refname | head -n 1)"
 
 Upgrade: `git fetch --tags && git checkout "$(git tag --sort=-v:refname | head -n 1)"`.
 
-## Demo mode
-
-Set `DASHBOARD_DEMO=true` (in `config.sh` or `config.local.sh`) to render
-fake data — no tokens, no network. Used to capture the screenshot. Only
-`coreutils` + `jq` are required.
 
 ## Configure
 
