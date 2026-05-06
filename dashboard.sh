@@ -20,16 +20,24 @@ source "${DASHBOARD_DIR}/components/brew/brew.sh"
 source "${DASHBOARD_DIR}/components/github/github.sh"
 # shellcheck source=components/jira/jira.sh
 source "${DASHBOARD_DIR}/components/jira/jira.sh"
+# shellcheck source=components/version/version.sh
+source "${DASHBOARD_DIR}/components/version/version.sh"
 
 dashboard_status_bar() {
-  local refresh
+  local refresh status version_indicator
   if (( DASHBOARD_REFRESH_MINUTES == 0 )); then
     refresh='single render'
   else
     refresh="refresh every ${DASHBOARD_REFRESH_MINUTES}m"
   fi
-  printf '%sUpdated %s · %s%s\n\n' \
-    "$UI_DIM$UI_MUTED" "$(date +%H:%M:%S)" "$refresh" "$UI_RESET"
+  status=$(printf '%sUpdated %s · %s%s' \
+    "$UI_DIM$UI_MUTED" "$(date +%H:%M:%S)" "$refresh" "$UI_RESET")
+  if config_enabled COMPONENT_VERSION; then
+    version_indicator=$(version_render)
+    [[ -n $version_indicator ]] && \
+      status+=" $(ui_paint "$UI_MUTED" '·') $version_indicator"
+  fi
+  printf '%s\n\n' "$status"
 }
 
 dashboard_render() {

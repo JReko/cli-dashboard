@@ -22,6 +22,7 @@ DASHBOARD_DEMO=false
 COMPONENT_BREW=true
 COMPONENT_GITHUB=true
 COMPONENT_JIRA=true
+COMPONENT_VERSION=true
 
 # --- Features ----------------------------------------------------------------
 FEATURE_BREW_OUTDATED_PACKAGES=true
@@ -30,6 +31,7 @@ FEATURE_GITHUB_API_STATUS=true
 FEATURE_GITHUB_PRS_AUTHORED=true
 FEATURE_GITHUB_PRS_REVIEW_REQUESTED=true
 FEATURE_JIRA_ASSIGNED_ISSUES=true
+FEATURE_VERSION_UPDATE_CHECK=true
 
 # --- Helper ------------------------------------------------------------------
 # config_enabled <VAR_NAME> — returns 0 if the named var is "true", else 1.

@@ -38,6 +38,16 @@ JSON
 
 demo_github_api_login() { printf 'octocat'; }
 
+demo_version_update_check_payload() {
+  cat <<'JSON'
+{
+  "tag_name": "v1.0.2",
+  "name": "v1.0.2",
+  "html_url": "https://github.com/JReko/cli-dashboard/releases/tag/v1.0.2"
+}
+JSON
+}
+
 demo_github_prs_review_requested_payload() {
   jq -n \
     --arg t1 "$(_demo_ago '2 hours')" \

@@ -7,7 +7,7 @@ Personal CLI dashboard. Bash. macOS + brew only. Refreshes itself.
 ## Install
 
 ```bash
-brew install coreutils gh jq ankitpokhrel/jira-cli/jira-cli
+brew install coreutils gh git jq ankitpokhrel/jira-cli/jira-cli
 ```
 
 `requirements.sh` prints the exact command if anything is missing.
@@ -53,6 +53,13 @@ Toggles:
 - `FEATURE_<COMPONENT>_<NAME>=true|false` — enable/disable a single feature
 
 Honors `NO_COLOR=1` and `UI_NO_NERDFONT=1`.
+
+## Version indicator
+
+The status bar appends the running version (from `git describe --tags`) and
+compares it to the latest GitHub release. On the latest tag it stays discreet;
+when behind it shows `⚠ <current> → <latest>`. Toggle with
+`COMPONENT_VERSION` / `FEATURE_VERSION_UPDATE_CHECK`.
 
 ## Layout
 

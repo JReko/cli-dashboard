@@ -15,6 +15,7 @@ requirements_check() {
       brew:brew
       gdate:coreutils
       gh:gh
+      git:git
       jira:ankitpokhrel/jira-cli/jira-cli
       jq:jq
     )
