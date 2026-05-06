@@ -37,3 +37,11 @@ config_enabled() {
   local var="$1"
   [[ "${!var:-false}" == "true" ]]
 }
+
+# --- Local overrides ---------------------------------------------------------
+# config.local.sh is gitignored. Put personal tweaks there so `git pull` never
+# conflicts on this file.
+_config_dir="${BASH_SOURCE[0]%/*}"
+# shellcheck source=/dev/null
+[[ -f "$_config_dir/config.local.sh" ]] && source "$_config_dir/config.local.sh"
+unset _config_dir

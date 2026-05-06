@@ -29,12 +29,23 @@ jira init   # one-time, writes ~/.config/.jira/.config.yml
 
 ## Demo mode
 
-Set `DASHBOARD_DEMO=true` in `config.sh` to render fake data — no tokens, no
-network. Used to capture the screenshot. Only `coreutils` + `jq` are required.
+Set `DASHBOARD_DEMO=true` (in `config.sh` or `config.local.sh`) to render
+fake data — no tokens, no network. Used to capture the screenshot. Only
+`coreutils` + `jq` are required.
 
 ## Configure
 
-All toggles in `config.sh`:
+Defaults live in `config.sh`. For personal tweaks, create `config.local.sh`
+next to it — it's gitignored and sourced last, so anything you set there
+overrides the defaults without dirtying `git status`.
+
+```bash
+# config.local.sh
+DASHBOARD_REFRESH_MINUTES=1
+COMPONENT_JIRA=false
+```
+
+Toggles:
 
 - `DASHBOARD_REFRESH_MINUTES` — refresh interval (`0` = render once, exit)
 - `DASHBOARD_DEMO=true|false` — render mock payloads instead of hitting APIs
