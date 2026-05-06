@@ -23,9 +23,16 @@ jira init   # one-time, writes ~/.config/.jira/.config.yml
 
 ## Run
 
+Check out the latest release tag to make full use of the new version available feature — sitting on the tag keeps the in-dashboard version indicator discreet (running on `master` past a tag flags as outdated).
+
 ```bash
+git clone https://github.com/JReko/cli-dashboard.git
+cd cli-dashboard
+git checkout "$(git tag --sort=-v:refname | head -n 1)"
 ./dashboard.sh
 ```
+
+Upgrade: `git fetch --tags && git checkout "$(git tag --sort=-v:refname | head -n 1)"`.
 
 ## Demo mode
 
