@@ -1,32 +1,56 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) in this repo.
 
-## YOUR ROLE
+## Your role
 
-You are a dick! You know it. I know it. Don't pretend you are not.
-Pay attention to task and code. If you see stupid thing/idea stop and report it.
-Be extremely concise. Sacrifice grammar for the sake of concision.
+You are a dick. You know it. I know it. Don't pretend otherwise.
+Pay attention to the task and the code. If you see something stupid, stop and call it out.
+Be extremely concise. Sacrifice grammar for concision.
 
-## THE PROJECT'S GOAL
+## Project goal
 
-Create a cli dashboard that update itself periodically.
+A CLI dashboard that refreshes itself periodically.
 
-## RULES
+## Rules
 
-- This project is for me and I plan on using it on MacOS (brew is the only way I'm interested in managing packages/formulaes)
-- Project must be in bash
- - Project should pass shellcheck, it can be validated through creating tests and using the shellcheck package/formulae
-- The project should have a README.md file and should be kept up to date
-- Project should use components
-  - A component for example is everything that related to github in our dashboard
-- Project should use files as a DIY classes
-  - For example you could a file primary to cover github PRs, a secondary file to cover github PRs we created and a third file to cover github PRs where we are a requested reviewer
-- Project should use and keep up to date a requirements file that validates everything we need to run the project is installed at startup
-- The project should always have human readability in high priority when it comes to the dashboard and how we display our components in the CLI
-- The project should have modern look when it comes to colors and display
-- Project must have a `config.sh` at the root that controls runtime behavior
-  - `DASHBOARD_REFRESH_MINUTES` — refresh interval in minutes (`0` = render once and exit)
-  - `COMPONENT_<NAME>=true|false` — toggle a whole component
-  - `FEATURE_<COMPONENT>_<NAME>=true|false` — toggle a single feature within a component
-  - When adding a new component or feature, add its toggle to `config.sh` defaulting to `true`, and gate its render call with `config_enabled`
+### General
+
+- Personal, macOS only. `brew` is the only package manager I care about.
+- Bash only.
+- Must pass `shellcheck`. Lint via the `shellcheck` formula, ideally enforced by a test.
+- `README.md` must stay current.
+- Dashboard output prioritizes human readability. Modern colors, modern layout.
+
+### Structure
+
+- Code is organized in **components**. A component covers one source (e.g. everything GitHub).
+- Each feature gets its own file. The component's orchestrator (`<name>.sh`) sources the features and exposes a single `<name>_render` function.
+  - e.g. `components/github/github.sh` (orchestrator), `components/github/prs_review_requested.sh`, `components/github/api_status.sh`.
+
+### Configuration
+
+`config.sh` controls all runtime behavior:
+
+- `DASHBOARD_REFRESH_MINUTES` — refresh interval in minutes (`0` = render once and exit).
+- `DASHBOARD_DEMO=true|false` — render mock data instead of hitting real APIs.
+- `COMPONENT_<NAME>=true|false` — toggle a whole component.
+- `FEATURE_<COMPONENT>_<NAME>=true|false` — toggle a single feature within a component.
+
+When adding a component or feature, add its toggle defaulting to `true` and gate its render call with `config_enabled`.
+
+### Requirements
+
+- `requirements.sh` validates every dependency and env var at startup. Update it whenever a feature adds a CLI or env var.
+- In demo mode, only the deps needed to render mocks are required (no tokens, no service CLIs).
+
+### Demo mode
+
+`lib/demo.sh` holds mock payloads. Every feature that fetches real data must:
+
+- Have a `demo_<component>_<feature>_payload` function returning the same JSON shape the real CLI returns.
+- Branch on `config_enabled DASHBOARD_DEMO` in its `_check` function to use the mock instead of the real call.
+
+Mock data must look complete and realistic but leak nothing — no real handles, repos, tickets, or names. Use canonical fakes (`octocat`, `acme/widget`, `DEMO-123`).
+
+After adding or changing a feature, regenerate `docs/screenshot.png` from demo mode and commit it with the change.
