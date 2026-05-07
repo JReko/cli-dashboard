@@ -8,6 +8,8 @@ DASHBOARD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck source=lib/ui.sh
 source "${DASHBOARD_DIR}/lib/ui.sh"
+# shellcheck source=lib/log.sh
+source "${DASHBOARD_DIR}/lib/log.sh"
 # shellcheck source=config.sh
 source "${DASHBOARD_DIR}/config.sh"
 # shellcheck source=lib/demo.sh

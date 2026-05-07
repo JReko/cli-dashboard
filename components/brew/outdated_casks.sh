@@ -3,15 +3,21 @@
 # available. Per row: name, installed -> latest. Columns padded to widest value.
 
 brew_outdated_casks_check() {
-  local payload count
+  local payload count err_file err
   if config_enabled DASHBOARD_DEMO; then
     payload=$(demo_brew_outdated_casks_payload)
-  elif ! payload=$(brew outdated --cask --greedy --json=v2 2>&1); then
-    printf '  %s Outdated casks %s %s\n' \
-      "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
-      "$(ui_paint "$UI_MUTED" '·')" \
-      "$(ui_paint "$UI_KO" "ERROR: $payload")"
-    return 1
+  else
+    err_file=$(mktemp)
+    if ! payload=$(brew outdated --cask --greedy --json=v2 2>"$err_file"); then
+      err=$(<"$err_file"); rm -f "$err_file"
+      log_error "brew/outdated_casks" "$err"
+      printf '  %s Outdated casks %s %s\n' \
+        "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
+        "$(ui_paint "$UI_MUTED" '·')" \
+        "$(ui_paint "$UI_KO" "ERROR (see $(log_path_display))")"
+      return 1
+    fi
+    rm -f "$err_file"
   fi
 
   count=$(jq '.casks | length' <<<"$payload")
