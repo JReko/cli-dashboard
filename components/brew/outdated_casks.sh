@@ -6,7 +6,7 @@ brew_outdated_casks_check() {
   local payload count
   if config_enabled DASHBOARD_DEMO; then
     payload=$(demo_brew_outdated_casks_payload)
-  elif ! payload=$(HOMEBREW_NO_AUTO_UPDATE=1 brew outdated --cask --greedy --json=v2 2>&1); then
+  elif ! payload=$(brew outdated --cask --greedy --json=v2 2>&1); then
     printf '  %s Outdated casks %s %s\n' \
       "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
       "$(ui_paint "$UI_MUTED" '·')" \

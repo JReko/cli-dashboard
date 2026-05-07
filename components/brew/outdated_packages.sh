@@ -6,7 +6,7 @@ brew_outdated_packages_check() {
   local payload count
   if config_enabled DASHBOARD_DEMO; then
     payload=$(demo_brew_outdated_formulae_payload)
-  elif ! payload=$(HOMEBREW_NO_AUTO_UPDATE=1 brew outdated --formula --json=v2 2>&1); then
+  elif ! payload=$(brew outdated --formula --json=v2 2>&1); then
     printf '  %s Outdated packages %s %s\n' \
       "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
       "$(ui_paint "$UI_MUTED" '·')" \
