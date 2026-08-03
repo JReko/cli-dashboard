@@ -19,3 +19,17 @@ log_error() {
 log_path_display() {
   printf '%s' "${DASHBOARD_LOG_FILE/#$HOME/~}"
 }
+
+# Guard a payload before it reaches jq. A CLI can exit 0 yet emit non-JSON on
+# stdout (banners, notices, deprecations), which makes jq abort — and under
+# `set -e` that kills the whole dashboard. Callers gate on this and render a
+# short line; the raw payload lands in the log for post-mortem.
+require_json() {
+  local source="$1" payload="$2"
+  # Empty input is "valid" to `jq empty` (zero values) but yields a blank
+  # count downstream, so reject whitespace-only payloads explicitly.
+  if [[ -z ${payload//[[:space:]]/} ]] || ! jq empty <<<"$payload" 2>/dev/null; then
+    log_error "$source" "expected JSON, got:"$'\n'"$payload"
+    return 1
+  fi
+}

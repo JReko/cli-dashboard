@@ -15,9 +15,22 @@ brew_outdated_packages_check() {
         "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
         "$(ui_paint "$UI_MUTED" '·')" \
         "$(ui_paint "$UI_KO" "ERROR (see $(log_path_display))")"
-      return 1
+      return 0  # handled: error line rendered; non-zero would trip set -e and kill the dashboard
     fi
     rm -f "$err_file"
+  fi
+
+  # brew prepends a progress banner (e.g. "==> Downloading Homebrew API data")
+  # to stdout on exit 0 when its API cache is stale; keep only the JSON that
+  # follows so it doesn't poison jq.
+  payload=$(awk 'seen || /^[[{]/ { seen=1; print }' <<<"$payload")
+
+  if ! require_json "brew/outdated_packages" "$payload"; then
+    printf '  %s Outdated packages %s %s\n' \
+      "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
+      "$(ui_paint "$UI_MUTED" '·')" \
+      "$(ui_paint "$UI_KO" "ERROR (see $(log_path_display))")"
+    return 0  # handled: error line rendered; non-zero would trip set -e and kill the dashboard
   fi
 
   count=$(jq '.formulae | length' <<<"$payload")
