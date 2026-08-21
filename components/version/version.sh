@@ -11,6 +11,6 @@ VERSION_COMPONENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${VERSION_COMPONENT_DIR}/update_check.sh"
 
 version_render() {
-  config_enabled FEATURE_VERSION_UPDATE_CHECK || return
+  config_enabled FEATURE_VERSION_UPDATE_CHECK || return 0
   version_update_check_render
 }

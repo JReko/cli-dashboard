@@ -17,7 +17,9 @@ log_error() {
 
 # Pretty path for inline messages: ~/Library/Logs/cli-dashboard/dashboard.log
 log_path_display() {
-  printf '%s' "${DASHBOARD_LOG_FILE/#$HOME/~}"
+  # `\~`: an unescaped tilde in the replacement is itself tilde-expanded, which
+  # would put $HOME straight back.
+  printf '%s' "${DASHBOARD_LOG_FILE/#$HOME/\~}"
 }
 
 # Guard a payload before it reaches jq. A CLI can exit 0 yet emit non-JSON on

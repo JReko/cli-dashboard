@@ -6,11 +6,17 @@
 # shellcheck disable=SC2034
 # Convention:
 #   DASHBOARD_REFRESH_MINUTES   — how often the dashboard re-renders. 0 = run once.
+#   DASHBOARD_REFRESH_TIMEOUT_SECONDS — per-cycle deadline for a component.
 #   COMPONENT_<NAME>            — true|false to enable/disable a whole component.
 #   FEATURE_<COMPONENT>_<NAME>  — true|false to enable/disable a single feature.
 
 # --- Refresh -----------------------------------------------------------------
 DASHBOARD_REFRESH_MINUTES=5
+
+# Components are refreshed in parallel in the background. A component that
+# hasn't reported within this budget is killed and flagged as failed, so one
+# wedged CLI can't freeze the whole dashboard. 0 disables the deadline.
+DASHBOARD_REFRESH_TIMEOUT_SECONDS=60
 
 # --- Demo --------------------------------------------------------------------
 # When true, every component renders fake data instead of hitting real APIs.

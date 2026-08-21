@@ -23,14 +23,20 @@ version_update_check_latest() {
   gh api "repos/${VERSION_UPDATE_CHECK_REPO}/releases/latest" --jq '.tag_name' 2>/dev/null
 }
 
-# Prints the inline header indicator. Empty on lookup failure.
+# Prints the inline header indicator.
 #   on latest:   dim "<version>"
 #   outdated:    warn "<icon> <current> → <latest>"
+# Prints nothing and returns non-zero when either version can't be resolved, so
+# the dashboard reports it as a failed source instead of silently dropping it.
 version_update_check_render() {
   local current latest
   current=$(version_update_check_current)
   latest=$(version_update_check_latest)
-  [[ -z $current || -z $latest ]] && return
+  if [[ -z $current || -z $latest ]]; then
+    log_error "version/update_check" \
+      "could not resolve versions (current='${current}' latest='${latest}')"
+    return 1
+  fi
 
   if [[ $current == "$latest" ]]; then
     printf '%s%s%s' "$UI_DIM$UI_MUTED" "$current" "$UI_RESET"

@@ -6,10 +6,11 @@ github_api_status_check() {
   if config_enabled DASHBOARD_DEMO; then
     login=$(demo_github_api_login)
   elif ! login=$(gh api /user --jq '.login' 2>&1); then
+    log_error "github/api_status" "$login"
     printf '  %s API access  %s %s\n' \
       "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
       "$(ui_paint "$UI_MUTED" '·')" \
-      "$(ui_paint "$UI_KO" "$login")"
+      "$(ui_paint "$UI_KO" "ERROR (see $(log_path_display))")"
     return 1
   fi
   printf '  %s API access  %s @%s\n' \

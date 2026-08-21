@@ -39,6 +39,7 @@ if [[ -n "${UI_NO_NERDFONT:-}" ]]; then
   UI_ICON_ARROW='->'
   UI_ICON_JIRA='[jira]'
   UI_ICON_TICKET='#'
+  UI_SPINNER=('|' '/' '-' $'\\')
 else
   UI_ICON_GITHUB=$''           # nf-fa-github
   UI_ICON_PR=$''               # nf-oct-git_pull_request
@@ -56,6 +57,7 @@ else
   UI_ICON_ARROW=$''            # nf-fa-long_arrow_right
   UI_ICON_JIRA=$'\xef\x82\xae'             # nf-fa-tasks
   UI_ICON_TICKET=$'\xef\x85\x85'           # nf-fa-ticket
+  UI_SPINNER=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)  # braille dots
 fi
 
 # --- NO_COLOR -----------------------------------------------------------------
@@ -64,6 +66,20 @@ if [[ -n "${NO_COLOR:-}" ]]; then
   UI_TEXT='' UI_MUTED='' UI_SUBTLE=''
   UI_OK='' UI_KO='' UI_WARN='' UI_INFO='' UI_ACCENT='' UI_LINK=''
 fi
+
+# --- Screen control ----------------------------------------------------------
+# Raw ANSI, not tput: no extra dependency, and the file already speaks escapes.
+# All no-ops off a TTY so piped output stays clean.
+
+ui_cursor_hide() { if [[ -t 1 ]]; then printf '\e[?25l'; fi; }
+ui_cursor_show() { if [[ -t 1 ]]; then printf '\e[?25h'; fi; }
+
+# Home the cursor and erase everything below it. Preferred over `clear`, which
+# also drops the scrollback and flashes between frames.
+ui_screen_reset() { if [[ -t 1 ]]; then printf '\e[H\e[J'; fi; }
+
+ui_cursor_home()  { if [[ -t 1 ]]; then printf '\e[H'; fi; }
+ui_line_erase()   { if [[ -t 1 ]]; then printf '\e[2K\r'; fi; }
 
 # --- Helpers ------------------------------------------------------------------
 

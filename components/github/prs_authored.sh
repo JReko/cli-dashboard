@@ -24,10 +24,11 @@ github_prs_authored_check() {
   if config_enabled DASHBOARD_DEMO; then
     payload=$(demo_github_prs_authored_payload)
   elif ! payload=$(gh api graphql -f query="$query" 2>&1); then
+    log_error "github/prs_authored" "$payload"
     printf '  %s PRs I opened %s %s\n' \
       "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
       "$(ui_paint "$UI_MUTED" '·')" \
-      "$(ui_paint "$UI_KO" "ERROR: $payload")"
+      "$(ui_paint "$UI_KO" "ERROR (see $(log_path_display))")"
     return 1
   fi
 

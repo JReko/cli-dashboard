@@ -10,10 +10,11 @@ jira_assigned_issues_check() {
   if config_enabled DASHBOARD_DEMO; then
     payload=$(demo_jira_assigned_issues_payload)
   elif ! payload=$(jira issue list -q "$jql" --order-by updated --reverse --raw 2>&1); then
+    log_error "jira/assigned_issues" "$payload"
     printf '  %s Assigned issues %s %s\n' \
       "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
       "$(ui_paint "$UI_MUTED" '·')" \
-      "$(ui_paint "$UI_KO" "ERROR: $payload")"
+      "$(ui_paint "$UI_KO" "ERROR (see $(log_path_display))")"
     return 1
   fi
 

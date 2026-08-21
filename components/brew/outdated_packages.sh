@@ -15,7 +15,7 @@ brew_outdated_packages_check() {
         "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
         "$(ui_paint "$UI_MUTED" '·')" \
         "$(ui_paint "$UI_KO" "ERROR (see $(log_path_display))")"
-      return 0  # handled: error line rendered; non-zero would trip set -e and kill the dashboard
+      return 1  # error line already rendered; the orchestrator collects the failure
     fi
     rm -f "$err_file"
   fi
@@ -30,7 +30,7 @@ brew_outdated_packages_check() {
       "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
       "$(ui_paint "$UI_MUTED" '·')" \
       "$(ui_paint "$UI_KO" "ERROR (see $(log_path_display))")"
-    return 0  # handled: error line rendered; non-zero would trip set -e and kill the dashboard
+    return 1  # error line already rendered; the orchestrator collects the failure
   fi
 
   count=$(jq '.formulae | length' <<<"$payload")
