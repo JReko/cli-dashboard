@@ -4,18 +4,40 @@
 # Columns are padded to the widest value in the batch.
 
 jira_assigned_issues_check() {
-  local jql payload count
+  local jql payload count err_file err
   jql='assignee = currentUser() AND statusCategory != Done'
 
   if config_enabled DASHBOARD_DEMO; then
     payload=$(demo_jira_assigned_issues_payload)
-  elif ! payload=$(jira issue list -q "$jql" --order-by updated --reverse --raw 2>&1); then
-    log_error "jira/assigned_issues" "$payload"
+  else
+    err_file=$(mktemp)
+    if ! payload=$(jira issue list -q "$jql" --order-by updated --reverse --raw 2>"$err_file"); then
+      err=$(<"$err_file"); rm -f "$err_file"
+      # An empty result set is not a failure, but jira-cli exits 1 for it just
+      # like it does for auth/network errors. The message is the only thing
+      # telling them apart, so match it (loosely) and fall through with an
+      # empty array; anything else is a real error.
+      if [[ $(_jira_strip_ansi "$err") == *[Nn]o\ result\ found* ]]; then
+        payload='[]'
+      else
+        log_error "jira/assigned_issues" "$err"
+        printf '  %s Assigned issues %s %s\n' \
+          "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
+          "$(ui_paint "$UI_MUTED" '·')" \
+          "$(ui_paint "$UI_KO" "ERROR (see $(log_path_display))")"
+        return 1  # error line already rendered; the orchestrator collects the failure
+      fi
+    else
+      rm -f "$err_file"
+    fi
+  fi
+
+  if ! require_json "jira/assigned_issues" "$payload"; then
     printf '  %s Assigned issues %s %s\n' \
       "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
       "$(ui_paint "$UI_MUTED" '·')" \
       "$(ui_paint "$UI_KO" "ERROR (see $(log_path_display))")"
-    return 1
+    return 1  # error line already rendered; the orchestrator collects the failure
   fi
 
   count=$(jq 'length' <<<"$payload")
@@ -98,4 +120,10 @@ _jira_assigned_issues_age() {
   elif (( diff < 86400 )); then printf '%dh' "$(( diff / 3600 ))"
   else                          printf '%dd' "$(( diff / 86400 ))"
   fi
+}
+
+# jira-cli colorizes its messages even when stderr is a pipe, so strip SGR
+# sequences before matching on the text.
+_jira_strip_ansi() {
+  printf '%s' "$1" | sed $'s/\033\[[0-9;]*m//g'
 }
