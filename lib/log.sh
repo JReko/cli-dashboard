@@ -29,8 +29,10 @@ log_path_display() {
 require_json() {
   local source="$1" payload="$2"
   # Empty input is "valid" to `jq empty` (zero values) but yields a blank
-  # count downstream, so reject whitespace-only payloads explicitly.
-  if [[ -z ${payload//[[:space:]]/} ]] || ! jq empty <<<"$payload" 2>/dev/null; then
+  # count downstream, so reject whitespace-only payloads explicitly. Regex, not
+  # ${payload//[[:space:]]/}: that substitution is quadratic and took >60s on
+  # jira's ~170KB payload.
+  if [[ ! $payload =~ [^[:space:]] ]] || ! jq empty <<<"$payload" 2>/dev/null; then
     log_error "$source" "expected JSON, got:"$'\n'"$payload"
     return 1
   fi
