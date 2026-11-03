@@ -154,6 +154,19 @@ demo_github_prs_authored_payload() {
               reviewRequests: {totalCount: 1}
             },
             {
+              number: 42,
+              title: "Bump base image to the latest LTS",
+              url: "https://github.com/acme/gadget/pull/42",
+              createdAt: $t3,
+              isDraft: false,
+              repository: {nameWithOwner: "acme/gadget"},
+              mergeable: "MERGEABLE",
+              reviewDecision: null,
+              commits: {nodes: [{commit: {statusCheckRollup: {state: "SUCCESS"}}}]},
+              latestReviews: {nodes: []},
+              reviewRequests: {totalCount: 1}
+            },
+            {
               number: 88,
               title: "WIP: extract shared age helper",
               url: "https://github.com/octocat/hello-world/pull/88",

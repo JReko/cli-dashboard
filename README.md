@@ -89,6 +89,19 @@ compares it to the latest GitHub release. On the latest tag it stays discreet;
 when behind it shows `⚠ <current> → <latest>`. Toggle with
 `COMPONENT_VERSION` / `FEATURE_VERSION_UPDATE_CHECK`.
 
+## PRs I opened
+
+| Column | Icons |
+| ------ | ----- |
+| CI     | ✔ passing · ✘ failing · hourglass running · `─` no checks |
+| Merge  | merge icon clean · ✘ conflict · ⚠ unknown |
+| Review | ✔ approved · ✘ changes requested · eye awaiting review · `─` none |
+| Appr   | approved / (reviews + pending requests) |
+
+"Awaiting review" uses `reviewDecision` when branch protection requires
+reviews, otherwise falls back to pending review requests. Drafts are dimmed.
+`UI_NO_NERDFONT=1` swaps glyphs for ASCII (`OK`, `KO`, `..`, `RV`, `M`, `!!`).
+
 ## Layout
 
 ```
