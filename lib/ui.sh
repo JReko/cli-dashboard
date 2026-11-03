@@ -29,6 +29,7 @@ if [[ -n "${UI_NO_NERDFONT:-}" ]]; then
   UI_ICON_KO='KO'
   UI_ICON_WARN='!!'
   UI_ICON_PENDING='..'
+  UI_ICON_REVIEW='RV'
   UI_ICON_USER='@'
   UI_ICON_REPO='R'
   UI_ICON_CLOCK='t'
@@ -47,6 +48,7 @@ else
   UI_ICON_KO=$''               # nf-fa-times
   UI_ICON_WARN=$''             # nf-fa-exclamation_triangle
   UI_ICON_PENDING=$''          # nf-fa-hourglass_half
+  UI_ICON_REVIEW=$'\xef\x81\xae' # nf-fa-eye
   UI_ICON_USER=$''             # nf-fa-user
   UI_ICON_REPO=$''             # nf-oct-repo
   UI_ICON_CLOCK=$''            # nf-fa-clock_o
