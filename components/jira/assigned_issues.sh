@@ -1,125 +1,179 @@
 #!/usr/bin/env bash
 # components/jira/assigned_issues.sh — non-closed Jira tickets assigned to me.
-# Per row: priority icon, status, clickable issue key, updated age, summary.
-# Columns are padded to the widest value in the batch.
+# In-progress first, then to-do. Columns: priority (hidden when every row is
+# medium), status, clickable key,
+# updated age (in-progress tickets go yellow past 7d, red past 14d — stale WIP
+# is the smell), summary (truncated). A status breakdown bar sits above the
+# table. Publishes wip_count / wip_stale to the pulse strip.
 
 jira_assigned_issues_check() {
-  local jql payload count err_file err
+  local jql payload wip_keys count show_prio
   jql='assignee = currentUser() AND statusCategory != Done'
 
+  # `--raw` gives status names only, no category. A second query for the
+  # in-progress keys tells the two apart (Done is already filtered out, so
+  # everything else is "new").
   if config_enabled DASHBOARD_DEMO; then
     payload=$(demo_jira_assigned_issues_payload)
-  else
-    err_file=$(mktemp)
-    if ! payload=$(jira issue list -q "$jql" --order-by updated --reverse --raw 2>"$err_file"); then
-      err=$(<"$err_file"); rm -f "$err_file"
-      # An empty result set is not a failure, but jira-cli exits 1 for it just
-      # like it does for auth/network errors. The message is the only thing
-      # telling them apart, so match it (loosely) and fall through with an
-      # empty array; anything else is a real error.
-      if [[ $(_jira_strip_ansi "$err") == *[Nn]o\ result\ found* ]]; then
-        payload='[]'
-      else
-        log_error "jira/assigned_issues" "$err"
-        printf '  %s Assigned issues %s %s\n' \
-          "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
-          "$(ui_paint "$UI_MUTED" '·')" \
-          "$(ui_paint "$UI_KO" "ERROR (see $(log_path_display))")"
-        return 1  # error line already rendered; the orchestrator collects the failure
-      fi
-    else
-      rm -f "$err_file"
-    fi
-  fi
-
-  if ! require_json "jira/assigned_issues" "$payload"; then
-    printf '  %s Assigned issues %s %s\n' \
-      "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
-      "$(ui_paint "$UI_MUTED" '·')" \
-      "$(ui_paint "$UI_KO" "ERROR (see $(log_path_display))")"
+    wip_keys=$(demo_jira_in_progress_keys_payload)
+  elif ! _jira_assigned_issues_fetch '[]' issue list -q "$jql" --order-by updated --reverse --raw \
+    || ! payload=$UI_REPLY \
+    || ! _jira_assigned_issues_fetch '' issue list -q "$jql AND statusCategory = \"In Progress\"" \
+      --plain --no-headers --columns key \
+    || ! wip_keys=$UI_REPLY; then
+    ui_feature_error "Assigned issues"
     return 1  # error line already rendered; the orchestrator collects the failure
   fi
 
-  count=$(jq 'length' <<<"$payload")
-  printf '  %s Assigned issues %s %s\n' \
-    "$(ui_paint "$UI_ACCENT" "$UI_ICON_TICKET")" \
-    "$(ui_paint "$UI_MUTED" '·')" \
-    "$(ui_paint "$UI_TEXT" "$count")"
+  if ! require_json "jira/assigned_issues" "$payload"; then
+    ui_feature_error "Assigned issues"
+    return 1  # error line already rendered; the orchestrator collects the failure
+  fi
+  payload=$(jq --arg keys "$wip_keys" '
+      ($keys | split("\n") | map(select(. != ""))) as $wip
+      | map(.fields.status.statusCategory.key =
+          (if [.key] | inside($wip) then "indeterminate" else "new" end))' <<<"$payload")
 
-  if (( count == 0 )); then
-    printf '    %s\n' "$(ui_paint "$UI_MUTED" '(none)')"
+  count=$(jq 'length' <<<"$payload")
+  _jira_assigned_issues_metrics "$payload"
+  ui_feature_header "$UI_ICON_TICKET" "Assigned issues" "$count"
+  if (( count == 0 )); then return 0; fi
+  _jira_assigned_issues_breakdown "$payload" "$count"
+
+  # A priority column where every row is medium (or unset) says nothing.
+  show_prio=$(jq 'any(.[]; (.fields.priority.name // "None") | IN("Medium", "None") | not)' <<<"$payload")
+  local -a heads=('Status' 'Key' 'Age:r' 'Summary:flex')
+  if [[ $show_prio == true ]]; then heads=('P' "${heads[@]}"); fi
+
+  local key summary priority status status_cat updated
+  while IFS=$'\t' read -r key summary priority status status_cat updated; do
+    _jira_assigned_issues_row "$show_prio" "$key" "$summary" "$priority" "$status" "$status_cat" "$updated"
+  done < <(jq -r '
+      def cat_rank: {"indeterminate": 0, "new": 1}[.fields.status.statusCategory.key // ""] // 2;
+      sort_by(cat_rank) | .[] | [
+        .key,
+        .fields.summary,
+        (.fields.priority.name // "None"),
+        .fields.status.name,
+        (.fields.status.statusCategory.key // "unknown"),
+        .fields.updated
+      ] | @tsv' <<<"$payload") \
+    | ui_table 2 "$UI_WIDTH" "${heads[@]}"
+}
+
+# _jira_assigned_issues_fetch <empty_value> <jira args...> — UI_REPLY: stdout.
+# jira-cli exits 1 for an empty result set just like for auth/network errors;
+# the message is the only thing telling them apart, so match it (loosely) and
+# return <empty_value>. Anything else is logged and returns 1.
+_jira_assigned_issues_fetch() {
+  local empty="$1" err_file err out
+  shift
+  err_file=$(mktemp)
+  if out=$(jira "$@" 2>"$err_file"); then
+    rm -f "$err_file"
+    UI_REPLY=$out
     return 0
   fi
+  err=$(<"$err_file"); rm -f "$err_file"
+  if [[ $(_jira_strip_ansi "$err") == *[Nn]o\ result\ found* ]]; then
+    UI_REPLY=$empty
+    return 0
+  fi
+  log_error "jira/assigned_issues" "$err"
+  return 1
+}
 
-  local rows=() key summary priority status status_cat updated age
-  local key_w=0 status_w=0 age_w=0
-  while IFS=$'\t' read -r key summary priority status status_cat updated; do
-    age=$(_jira_assigned_issues_age "$updated")
-    rows+=("$key"$'\t'"$summary"$'\t'"$priority"$'\t'"$status"$'\t'"$status_cat"$'\t'"$age")
-    (( ${#key}    > key_w    )) && key_w=${#key}
-    (( ${#status} > status_w )) && status_w=${#status}
-    (( ${#age}    > age_w    )) && age_w=${#age}
-  done < <(jq -r '.[] | [
-      .key,
-      .fields.summary,
-      (.fields.priority.name // "None"),
-      .fields.status.name,
-      (.fields.status.statusCategory.key // "unknown"),
-      .fields.updated
-    ] | @tsv' <<<"$payload")
+# _jira_assigned_issues_metrics <payload> — in-progress count, and how many of
+# those haven't moved in 7 days.
+_jira_assigned_issues_metrics() {
+  local updated wip=0 stale=0
+  while IFS= read -r updated; do
+    if [[ -z $updated ]]; then continue; fi
+    wip=$(( wip + 1 ))
+    ui_age "$updated"
+    if (( UI_AGE_SECS >= 7 * UI_DAY )); then stale=$(( stale + 1 )); fi
+  done < <(jq -r '.[] | select(.fields.status.statusCategory.key == "indeterminate") | .fields.updated' <<<"$1")
+  ui_metric wip_count "$wip"
+  ui_metric wip_stale "$stale"
+}
 
-  local row
-  for row in "${rows[@]}"; do
-    IFS=$'\t' read -r key summary priority status status_cat age <<<"$row"
-    _jira_assigned_issues_row \
-      "$key_w" "$status_w" "$age_w" \
-      "$key" "$summary" "$priority" "$status" "$status_cat" "$age"
+# _jira_assigned_issues_breakdown <payload> <count> — one stacked bar, a
+# segment per status (in table order), then a legend line.
+_jira_assigned_issues_breakdown() {
+  local payload="$1" total="$2" width=$(( UI_WIDTH - 2 ))
+  local -a names=() cats=() counts=()
+  local name cat n i seg used=0 avail bar='' legend='' color wip_shade=0 new_shade=0
+  while IFS=$'\t' read -r name cat n; do
+    names+=("$name"); cats+=("$cat"); counts+=("$n")
+  done < <(jq -r '
+      def cat_rank: {"indeterminate": 0, "new": 1}[.statusCategory.key // ""] // 2;
+      [.[].fields.status] | sort_by(cat_rank)
+      | reduce .[] as $s ([];
+          if any(.[]; .name == $s.name) then map(if .name == $s.name then .n += 1 else . end)
+          else . + [{name: $s.name, cat: ($s.statusCategory.key // "unknown"), n: 1}] end)
+      | .[] | [.name, .cat, (.n|tostring)] | @tsv' <<<"$payload")
+
+  avail=$(( width - (${#names[@]} - 1) ))
+  for i in "${!names[@]}"; do
+    case "${cats[i]}" in
+      indeterminate)
+        if (( wip_shade % 2 == 0 )); then color="$UI_INFO"; else color="$UI_LINK"; fi
+        wip_shade=$(( wip_shade + 1 ))
+        ;;
+      done) color="$UI_OK" ;;
+      *)
+        if (( new_shade % 2 == 0 )); then color="$UI_SUBTLE"; else color="$UI_MUTED"; fi
+        new_shade=$(( new_shade + 1 ))
+        ;;
+    esac
+    if (( i == ${#names[@]} - 1 )); then
+      seg=$(( avail - used ))
+    else
+      seg=$(( (counts[i] * avail + total / 2) / total ))
+      if (( seg < 1 )); then seg=1; fi
+    fi
+    used=$(( used + seg ))
+    ui_repeat "$UI_BAR_ON" "$seg"
+    if [[ -n $bar ]]; then bar+=' '; fi
+    bar+="$color$UI_REPLY$UI_RESET"
+    if [[ -n $legend ]]; then legend+='   '; fi
+    legend+="$color$UI_BOX_ON$UI_RESET $UI_MUTED${names[i]} ${counts[i]}$UI_RESET"
   done
+  printf '  %s\n  %s\n' "$bar" "$legend"
 }
 
 _jira_assigned_issues_row() {
-  local key_w="$1" status_w="$2" age_w="$3"
-  local key="$4" summary="$5" priority="$6" status="$7" status_cat="$8" age="$9"
-  local prio_icon prio_color status_color key_visible key_link
+  local show_prio="$1" key="$2" summary="$3" priority="$4" status="$5" status_cat="$6" updated="$7"
+  local prio_icon prio_color status_color age_color="$UI_MUTED"
 
   case "$priority" in
-    Highest)        prio_icon="$UI_ICON_WARN";    prio_color="$UI_KO" ;;
-    High)           prio_icon="$UI_ICON_WARN";    prio_color="$UI_WARN" ;;
-    Medium)         prio_icon="$UI_ICON_PENDING"; prio_color="$UI_INFO" ;;
-    Low|Lowest|None|'') prio_icon='─';            prio_color="$UI_MUTED" ;;
-    *)              prio_icon="$UI_ICON_PENDING"; prio_color="$UI_MUTED" ;;
+    Highest)     prio_icon="$UI_ICON_PRIO_HIGHEST"; prio_color="$UI_KO" ;;
+    High)        prio_icon="$UI_ICON_PRIO_HIGH";    prio_color="$UI_WARN" ;;
+    Medium)      prio_icon="$UI_ICON_PRIO_MEDIUM";  prio_color="$UI_MUTED" ;;
+    Low|Lowest)  prio_icon="$UI_ICON_PRIO_LOW";     prio_color="$UI_MUTED" ;;
+    *)           prio_icon='─';                     prio_color="$UI_MUTED" ;;
   esac
 
   case "$status_cat" in
-    new)           status_color="$UI_MUTED" ;;
     indeterminate) status_color="$UI_INFO" ;;
     done)          status_color="$UI_OK" ;;
-    *)             status_color="$UI_TEXT" ;;
+    *)             status_color="$UI_MUTED" ;;
   esac
 
-  printf -v key_visible '%-*s' "$key_w" "$key"
-  key_link=$(ui_hyperlink "${JIRA_HOST}/browse/${key}" "$key_visible")
-
-  printf '    %s  %s%-*s%s  %s%s%s  %s%-*s%s  %s%s%s\n' \
-    "$(ui_paint "$prio_color" "$prio_icon")" \
-    "$status_color" "$status_w" "$status"  "$UI_RESET" \
-    "$UI_LINK"                  "$key_link" "$UI_RESET" \
-    "$UI_MUTED"     "$age_w"    "$age"      "$UI_RESET" \
-    "$UI_TEXT"                  "$summary"  "$UI_RESET"
-}
-
-_jira_assigned_issues_age() {
-  local ts="$1" now started diff
-  now=$(date +%s)
-  if ! started=$(gdate -d "$ts" +%s 2>/dev/null); then
-    printf '?'
-    return
+  ui_age "$updated"
+  if [[ $status_cat == indeterminate ]]; then
+    ui_age_color "$UI_AGE_SECS" $(( 7 * UI_DAY )) $(( 14 * UI_DAY ))
+    age_color="$UI_REPLY"
   fi
-  diff=$(( now - started ))
-  if   (( diff < 3600 ));  then printf '%dm' "$(( diff / 60 ))"
-  elif (( diff < 86400 )); then printf '%dh' "$(( diff / 3600 ))"
-  else                          printf '%dd' "$(( diff / 86400 ))"
+
+  if [[ $show_prio == true ]]; then
+    printf '%s\t' "$(ui_cell "$prio_color" "$prio_icon")"
   fi
+  printf '%s\t%s\t%s\t%s\n' \
+    "$(ui_cell "$status_color" "$status")" \
+    "$(ui_cell "$UI_LINK" "$key" "${JIRA_HOST}/browse/${key}")" \
+    "$(ui_cell "$age_color" "$UI_AGE_LABEL")" \
+    "$(ui_cell "$UI_TEXT" "$summary")"
 }
 
 # jira-cli colorizes its messages even when stderr is a pipe, so strip SGR

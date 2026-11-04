@@ -198,7 +198,7 @@ demo_jira_assigned_issues_payload() {
         fields: {
           summary: "Wire up dashboard demo mode",
           priority: {name: "Medium"},
-          status: {name: "In Progress", statusCategory: {key: "indeterminate"}},
+          status: {name: "In Progress"},
           updated: $t1
         }
       },
@@ -207,7 +207,7 @@ demo_jira_assigned_issues_payload() {
         fields: {
           summary: "Investigate stale cache on cold start",
           priority: {name: "High"},
-          status: {name: "In Review", statusCategory: {key: "indeterminate"}},
+          status: {name: "In Review"},
           updated: $t2
         }
       },
@@ -216,7 +216,7 @@ demo_jira_assigned_issues_payload() {
         fields: {
           summary: "Plan migration to bash 5.2",
           priority: {name: "Highest"},
-          status: {name: "Backlog", statusCategory: {key: "new"}},
+          status: {name: "Backlog"},
           updated: $t3
         }
       },
@@ -225,7 +225,7 @@ demo_jira_assigned_issues_payload() {
         fields: {
           summary: "Document the components conventions",
           priority: {name: "None"},
-          status: {name: "Open", statusCategory: {key: "new"}},
+          status: {name: "Open"},
           updated: $t4
         }
       },
@@ -234,9 +234,25 @@ demo_jira_assigned_issues_payload() {
         fields: {
           summary: "Audit color palette for contrast",
           priority: {name: "Low"},
-          status: {name: "In Progress", statusCategory: {key: "indeterminate"}},
+          status: {name: "In Progress"},
           updated: $t5
         }
       }
     ]'
+}
+
+# Keys of the mock issues in an "In Progress" status category, one per line —
+# what `jira issue list --plain --no-headers --columns key` prints.
+demo_jira_in_progress_keys_payload() {
+  printf '%s\n' DEMO-101 DEMO-87 DEMO-12
+}
+
+# Review queue history, "YYYY-MM-DD count" per day, ending today. Same shape as
+# PULSE_HISTORY_FILE.
+demo_pulse_trend_payload() {
+  local -a series=(2 3 3 5 6 4 3 5 7 6 4 3 5 4)
+  local i n=${#series[@]}
+  for i in "${!series[@]}"; do
+    printf '%s %s\n' "$(gdate -d "-$(( n - 1 - i )) days" +%F)" "${series[i]}"
+  done
 }

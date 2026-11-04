@@ -12,7 +12,7 @@ source "${JIRA_COMPONENT_DIR}/assigned_issues.sh"
 
 jira_render() {
   local rc=0
-  ui_section_header "$UI_ICON_JIRA" "Jira"
+  ui_panel_title "$UI_ICON_JIRA" "Jira"
   if config_enabled FEATURE_JIRA_ASSIGNED_ISSUES; then
     jira_assigned_issues_check || rc=1
   fi

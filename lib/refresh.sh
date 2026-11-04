@@ -17,6 +17,8 @@ REFRESH_CYCLE=0
 REFRESH_STARTED_AT=0
 REFRESH_NAMES=()
 REFRESH_PIDS=()
+# Optional per-component content width, exported to the worker as UI_WIDTH.
+declare -A REFRESH_WIDTH=()
 
 refresh_cycle_dir() {
   printf '%s/%s' "$REFRESH_SPOOL_ROOT" "$REFRESH_CYCLE"
@@ -44,6 +46,7 @@ refresh_start() {
 
 _refresh_worker() {
   local dir="$1" name="$2" fn="$3" rc=0
+  UI_WIDTH="${REFRESH_WIDTH[$name]:-${UI_WIDTH:-80}}"
   "$fn" >"$dir/${name}.out" 2>"$dir/${name}.err" || rc=$?
   _refresh_write_status "$dir" "$name" "$rc"
 }
@@ -92,7 +95,7 @@ refresh_abandon() {
     if [[ -f "$dir/${name}.status" ]]; then continue; fi
     pid="${REFRESH_PIDS[i]}"
     { kill "$pid" && wait "$pid"; } 2>/dev/null || true
-    printf '  %s %s\n' \
+    printf '%s %s\n' \
       "$(ui_paint "$UI_KO" "$UI_ICON_KO")" \
       "$(ui_paint "$UI_KO" "${name} — refresh timed out after ${limit}s")" \
       >"$dir/${name}.out"
