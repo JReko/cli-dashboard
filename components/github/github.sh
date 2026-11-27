@@ -2,8 +2,9 @@
 # components/github/github.sh — github component orchestrator. Sources its features
 # and exposes a single render function the dashboard calls.
 #
-# Features render in priority order: what's waiting on me first, then my own
-# PRs. API status rides in the panel badge rather than taking a row.
+# Features render in priority order: what's waiting on me first, then my
+# issues, then my own PRs. API status rides in the panel badge rather than
+# taking a row.
 #
 # Returns non-zero if any enabled feature failed, so the dashboard status bar
 # can flag the source. Features still render their own error line.
@@ -12,6 +13,8 @@ GITHUB_COMPONENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck source-path=SCRIPTDIR source=api_status.sh
 source "${GITHUB_COMPONENT_DIR}/api_status.sh"
+# shellcheck source-path=SCRIPTDIR source=issues_assigned.sh
+source "${GITHUB_COMPONENT_DIR}/issues_assigned.sh"
 # shellcheck source-path=SCRIPTDIR source=prs_authored.sh
 source "${GITHUB_COMPONENT_DIR}/prs_authored.sh"
 # shellcheck source-path=SCRIPTDIR source=prs_review_requested.sh
@@ -20,6 +23,7 @@ source "${GITHUB_COMPONENT_DIR}/prs_review_requested.sh"
 # jq: `repo($owner)` is the repo label for a search node. The most common
 # owner in the list is noise, so its repos show by name only; any other owner
 # stays visible (`octocat/spoon-knife`). Bind $owner with `common_owner(nodes)`.
+# shellcheck disable=SC2016 # jq source; $owner is a jq variable
 GITHUB_REPO_JQ_DEFS='
   def common_owner(n): n | map(.repository.nameWithOwner | split("/")[0])
     | group_by(.) | max_by(length) | .[0] // "";
@@ -62,6 +66,11 @@ github_render() {
   fi
   if config_enabled FEATURE_GITHUB_PRS_REVIEW_REQUESTED; then
     github_prs_review_requested_check || rc=1
+    sep=$'\n'
+  fi
+  if config_enabled FEATURE_GITHUB_ISSUES_ASSIGNED; then
+    printf '%s' "$sep"
+    github_issues_assigned_check || rc=1
     sep=$'\n'
   fi
   if config_enabled FEATURE_GITHUB_PRS_AUTHORED; then

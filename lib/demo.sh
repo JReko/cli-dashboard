@@ -185,6 +185,36 @@ demo_github_prs_authored_payload() {
     }'
 }
 
+demo_github_issues_assigned_payload() {
+  jq -n \
+    --arg t1 "$(_demo_ago '40 minutes')" \
+    --arg t2 "$(_demo_ago '3 hours')" \
+    --arg t3 "$(_demo_ago '1 day')" \
+    --arg t4 "$(_demo_ago '9 days')" \
+    --arg t5 "$(_demo_ago '16 days')" \
+    'def issue($n; $title; $t; $labels): {
+        number: $n,
+        title: $title,
+        url: "https://github.com/acme/ops-issues/issues/\($n)",
+        updatedAt: $t,
+        repository: {nameWithOwner: "acme/ops-issues"},
+        labels: {nodes: ($labels | map({name: .}))}
+      };
+    {
+      data: {
+        search: {
+          nodes: [
+            issue(58; "Rotate the widget-api database credentials"; $t1; ["task", "ai-in-progress"]),
+            issue(55; "Nightly backup job exits 0 when the upload fails"; $t2; ["bug", "ai-problem-detected"]),
+            issue(51; "Raise the widget-worker memory limit to 1 GiB"; $t3; ["enhancement", "ai-ready"]),
+            issue(47; "Find out why staging deploys take 20 minutes"; $t4; ["investigation"]),
+            issue(39; "Upgrade the log shipper to the next major version"; $t5; ["task", "blocked"])
+          ]
+        }
+      }
+    }'
+}
+
 demo_jira_assigned_issues_payload() {
   jq -n \
     --arg t1 "$(_demo_ago '3 hours')" \

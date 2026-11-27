@@ -41,6 +41,7 @@ if [[ -n "${UI_NO_NERDFONT:-}" ]]; then
   UI_ICON_ARROW='->'
   UI_ICON_JIRA='[jira]'
   UI_ICON_TICKET='#'
+  UI_ICON_ISSUE='(o)'
   UI_ICON_PULSE='~'
   UI_SPINNER=('|' '/' '-' $'\\')
   UI_ICON_PRIO_HIGHEST='^^'
@@ -68,6 +69,7 @@ else
   UI_ICON_ARROW=$''            # nf-fa-long_arrow_right
   UI_ICON_JIRA=$'\xef\x82\xae'             # nf-fa-tasks
   UI_ICON_TICKET=$'\xef\x85\x85'           # nf-fa-ticket
+  UI_ICON_ISSUE=$'\xef\x90\x9b'            # nf-oct-issue_opened
   UI_ICON_PULSE=$'\xef\x88\x9e'            # nf-fa-heartbeat
   UI_SPINNER=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)  # braille dots
   UI_ICON_PRIO_HIGHEST='⇈'

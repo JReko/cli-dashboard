@@ -38,7 +38,7 @@ _pulse_has() {
 _pulse_sum() {
   local key sum=''
   for key in "$@"; do
-    if [[ -n ${PULSE_METRICS[$key]+set} ]]; then sum=$(( ${sum:-0} + PULSE_METRICS[$key] )); fi
+    if [[ -n ${PULSE_METRICS[$key]+set} ]]; then sum=$(( ${sum:-0} + ${PULSE_METRICS[$key]} )); fi
   done
   UI_REPLY="$sum"
 }
@@ -69,11 +69,16 @@ pulse_meters_render() {
     blocks+=("mine|My PRs blocked|$blocked|$blocked|$total|$caption")
   fi
 
-  if _pulse_has wip_count; then
-    local wip=${PULSE_METRICS[wip_count]} stale=${PULSE_METRICS[wip_stale]:-0}
+  # Work in progress across trackers: Jira in-progress tickets plus GitHub
+  # issues an agent is working on.
+  _pulse_sum wip_count issues_wip
+  if [[ -n $UI_REPLY ]]; then
+    local wip=$UI_REPLY stale
+    _pulse_sum wip_stale issues_wip_stale
+    stale=${UI_REPLY:-0}
     caption="${m}none stale${r}"
     if (( stale > 0 )); then caption="${UI_WARN}${stale} stale${r}${m} > 7d${r}"; fi
-    blocks+=("wip|Jira in progress|$wip|$wip|$PULSE_BUDGET_WIP|$caption")
+    blocks+=("wip|In progress|$wip|$wip|$PULSE_BUDGET_WIP|$caption")
   fi
 
   _pulse_sum brew_formulae_outdated brew_casks_outdated
