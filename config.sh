@@ -34,6 +34,11 @@ DASHBOARD_FIT_HEIGHT=true
 # table.
 BREW_COMPACT=false
 
+# Scope the GitHub "My issues" feature to one owner/repo (e.g. your team's
+# issue tracker). Empty = open issues assigned to you in every repo. Set it in
+# config.local.sh if the repo name shouldn't be public.
+GITHUB_ISSUES_REPO=''
+
 # --- Demo --------------------------------------------------------------------
 # When true, every component renders fake data instead of hitting real APIs.
 # Used to capture the README screenshot without leaking real handles, repos,
@@ -51,6 +56,7 @@ COMPONENT_VERSION=true
 FEATURE_BREW_OUTDATED_PACKAGES=true
 FEATURE_BREW_OUTDATED_CASKS=true
 FEATURE_GITHUB_API_STATUS=true
+FEATURE_GITHUB_ISSUES_ASSIGNED=true
 FEATURE_GITHUB_PRS_AUTHORED=true
 FEATURE_GITHUB_PRS_REVIEW_REQUESTED=true
 FEATURE_JIRA_ASSIGNED_ISSUES=true

@@ -61,6 +61,9 @@ Toggles:
   (default `55`)
 - `DASHBOARD_FIT_HEIGHT=true|false` — trim table rows so the whole frame fits the
   terminal height, hidden rows shown as `+N more` (default `true`)
+- `GITHUB_ISSUES_REPO` — `owner/repo` the GitHub "My issues" table is scoped to,
+  e.g. your team's issue tracker (default empty = every repo). Private repo
+  names belong in `config.local.sh`
 - `BREW_COMPACT=true|false` — Homebrew as one inline line per feature instead of
   the version table (default `false`)
 - `PULSE_HISTORY_FILE` — where the review-queue trend is kept (default
@@ -72,7 +75,7 @@ Honors `NO_COLOR=1` and `UI_NO_NERDFONT=1`.
 
 Each component is a rounded panel, title set in the border, status badge on
 the right (e.g. `✔ @octocat`). Order is by urgency: the Pulse strip, GitHub
-(review requests, then my PRs), Jira, Homebrew last.
+(review requests, then my issues, then my PRs), Jira, Homebrew last.
 
 - **Fits one window.** Pulse spans the top. On terminals ≥
   `DASHBOARD_WIDE_COLUMNS` GitHub takes the left column and Jira + Homebrew
@@ -100,8 +103,11 @@ A full-width strip on top that sums up the rest:
 | ------------------- | --------------------- | ----------- | -------------------- |
 | PRs to review       | review requests       | 8           | age of the oldest    |
 | My PRs blocked      | blocked PRs           | all open    | of N open · N ready  |
-| Jira in progress    | in-progress tickets   | 4           | stale (> 7d) count   |
+| In progress         | Jira + agent issues   | 4           | stale (> 7d) count   |
 | Brew outdated       | formulae + casks      | 20          | major-bump count     |
+
+In progress counts Jira in-progress tickets plus my GitHub issues labelled
+`ai-in-progress`.
 
 Meters sit in one row; too narrow for that, they become a list. Right of
 the meters, when there's room (dropped otherwise): the review queue over 14 days as a
@@ -149,7 +155,7 @@ when behind it shows `⚠ <current> → <latest>`. Toggle with
 
 ## Columns
 
-Both GitHub tables drop the most common repo owner (`acme/widget` → `widget`);
+GitHub tables drop the most common repo owner (`acme/widget` → `widget`);
 other owners stay visible. When a title doesn't fit, Repo (and Author) are
 truncated first, down to 14 chars, before the title gives up any width.
 
@@ -162,6 +168,21 @@ Oldest first. Age: yellow > 1d, red > 3d.
 | State  | red `CI failing` · red `conflict` · cyan `CI running` · blank when healthy |
 
 Publishes `review_count`, `review_oldest_secs`.
+
+### My issues
+
+Open issues assigned to me, in `GITHUB_ISSUES_REPO` (every repo when unset).
+Sorted by what needs me: `ai-problem-detected` → `blocked` → untriaged →
+`ai-ready` → `ai-in-progress`; recently updated first within a group. Age is
+since last update: yellow > 7d, red > 14d. Repo column only shows when issues
+span several repos.
+
+- **State**: red `needs me` (`ai-problem-detected`) · red `blocked` · green
+  `ai-ready` · cyan `agent working` (`ai-in-progress`) · blank when untriaged.
+- **Type**: `bug` (yellow) · `enhancement` · `task` · `investigation`; hidden
+  when no issue has one.
+
+Publishes `issues_wip`, `issues_wip_stale`.
 
 ### My PRs
 
